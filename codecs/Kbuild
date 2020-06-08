@@ -1,0 +1,4 @@
+obj-m := snd-soc-sabre32.o snd-soc-es9018k2m.o snd-soc-botic-codec.o
+snd-soc-sabre32-y := sabre32.o
+snd-soc-es9018k2m-y := es9018k2m.o
+snd-soc-botic-codec-y := botic-codec.o
