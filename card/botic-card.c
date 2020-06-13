@@ -315,7 +315,7 @@ module_param(blr_ratio, int, 0644);
 MODULE_PARM_DESC(blr_ratio, "force BCLK/LRCLK ratio");
 
 module_param(dai_format, int, 0644);
-MODULE_PARM_DESC(dai_format, "Set DAI format to non-default setting (e.g. right justified)."
+MODULE_PARM_DESC(dai_format, "Set DAI format to non-default setting (e.g. right justified).");
 
 MODULE_AUTHOR("Christian Kröner");
 MODULE_DESCRIPTION("ASoC Botic sound card (rewrite)");
