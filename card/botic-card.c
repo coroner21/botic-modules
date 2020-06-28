@@ -117,7 +117,7 @@ static int botic_hw_params(struct snd_pcm_substream *substream,
 		return ret;
 	}
 	
-	divisor = sysclk / bclk;
+	divisor = (sysclk + (bclk / 2) / bclk;
 	ret = snd_soc_dai_set_clkdiv(cpu_dai, 1, divisor);
 	if (ret < 0) {
 		printk(KERN_WARNING "botic-card: unsupported set_clkdiv1");
