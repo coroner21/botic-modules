@@ -35,8 +35,8 @@ static int botic_hw_params(struct snd_pcm_substream *substream,
 		struct snd_pcm_hw_params *params) {
 	
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	struct snd_soc_dai *codec_dai = rtd->codec_dai;
-	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_dai *cpu_dai = asoc_rtd_to_cpu(rtd, 0);
 	struct botic_priv *priv = snd_soc_card_get_drvdata(rtd->card);
 	unsigned int sysclk, bclk, divisor;
 	int ret;
@@ -117,7 +117,7 @@ static int botic_hw_params(struct snd_pcm_substream *substream,
 		return ret;
 	}
 	
-	divisor = sysclk / bclk;
+	divisor = (sysclk + (bclk / 2) )/ bclk;
 	ret = snd_soc_dai_set_clkdiv(cpu_dai, 1, divisor);
 	if (ret < 0) {
 		printk(KERN_WARNING "botic-card: unsupported set_clkdiv1");
