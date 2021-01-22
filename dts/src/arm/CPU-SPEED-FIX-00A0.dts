@@ -1,0 +1,15 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "ti,am335x-bone-black-wireless", "ti,am335x-bone-black";
+
+	fragment@0 {
+		target = <&cpu0_opp_table>;
+		__overlay__ {
+			oppnitro-1000000000 {
+				opp-supported-hw = <0x06 0x0100>;
+			};
+		};
+	};
+};
