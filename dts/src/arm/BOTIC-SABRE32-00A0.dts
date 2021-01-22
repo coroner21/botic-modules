@@ -1,10 +1,3 @@
-/*
- * Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- */
 /dts-v1/;
 /plugin/;
 
@@ -15,15 +8,6 @@
 	compatible = "ti,am335x-bone-black-wireless", "ti,am335x-bone-black";
 
 	fragment@0 {
-		target = <&cpu0_opp_table>;
-		__overlay__ {
-			oppnitro-1000000000 {
-				opp-supported-hw = <0x06 0x0100>;
-			};
-		};
-	};
-
-	fragment@1 {
 		target = <&am33xx_pinmux>;
 		__overlay__ {
 
@@ -80,7 +64,7 @@
 		};
 	};
 
-	fragment@2 {
+	fragment@1 {
 		target-path="/";
 
 		__overlay__ {
@@ -136,7 +120,7 @@
 	};
 	
 	/* (Hermes-BBB) The I2C1 for isolated I2C access. */
-	fragment@3 {
+	fragment@2 {
 		target = <&i2c1>;
 		__overlay__ {
 			#address-cells = <1>;
@@ -149,7 +133,7 @@
 	};
 	
 	/* Enable McASP. Default parameters can be changed during run-time. */
-	fragment@4 {
+	fragment@3 {
 		target = <&mcasp0>;
 		__overlay__ {
 			pinctrl-names = "default";
