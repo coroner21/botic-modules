@@ -349,7 +349,7 @@ static SOC_ENUM_SINGLE_DECL(remap_output, 14, 0, remap_output_text);
 
 static const DECLARE_TLV_DB_MINMAX_MUTE(master_tlv, -6051, 0);
 */
-static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 0);
+static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 50, 1);
 
 static const struct snd_kcontrol_new sabre32_controls[] = {
     SOC_DOUBLE_R_TLV("Master Playback Volume", SABRE32_VOLUME0, SABRE32_VOLUME1, 0, 0xFF, 1, sabre32_dac_tlv),
@@ -414,7 +414,6 @@ static int sabre32_hw_params(struct snd_pcm_substream *substream,
         struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
 {
     struct snd_soc_component *component = dai->component;
-    unsigned int rate = params_rate(params);
     int ret;
 
     switch (params_format(params)) {
@@ -519,7 +518,7 @@ static struct i2c_driver sabre32_i2c_driver = {
 	.probe = sabre32_i2c_probe,
 };
 
-module_i2c_driver(es9018k2m_i2c_driver);
+module_i2c_driver(sabre32_i2c_driver);
 
 MODULE_AUTHOR("Christian Kroener");
 MODULE_DESCRIPTION("ESS Technology Sabre32 Audio DAC");

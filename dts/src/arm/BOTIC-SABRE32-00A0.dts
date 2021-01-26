@@ -74,12 +74,6 @@
 				gpios = <&gpio3 17 1>;
 			};
 
-			sabre32_codec: sabre32_codec {
-				compatible = "sabre32-audio-codec";
-				status = "okay";
-				i2c-bus = <&i2c1>; /* Isolated I2C bus on Hermes-BBB. */
-			};
-
 			clk48: clk48 {
 				#clock-cells = <0>;
 				compatible = "fixed-clock";
@@ -110,7 +104,7 @@
 				clock-names = "mux", "clk48", "clk44";
 
 				audio-port = <&mcasp0>;
-				audio-codec = <&sabre32_codec>;
+				audio-codec = <&sabre32>;
 				audio-codec-dai = "sabre32-hifi";
 
 				dsd-gpios = <&gpio0 14 0>;
@@ -129,6 +123,12 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2c1_pins>;
 			clock-frequency = <100000>;
+			/* ESS SABRE32 DAC is on I2C address 0x48 */
+			sabre32: sabre32@48 {
+				compatible = "ess,sabre32";
+				reg = <0x48>;
+				status = "okay";
+			};
 		};
 	};
 	
