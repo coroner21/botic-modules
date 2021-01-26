@@ -237,17 +237,17 @@ static int sabre32_dpll_set(struct snd_kcontrol *kcontrol,
 		/* Set auto or auto 128x */
 		snd_soc_component_update_bits(component, SABRE32_DPLL_MODE, 0x03, 2 + value);
 		/* Reset DPLL bandwidth to default */
-		snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x1C, 0x01);
+		snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL2, 0x1C, 0x01);
 	}
 	else {
 		value -= 2;
 		if (value <= 7) {
-			snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x1C, value << 2);
+			snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL2, 0x1C, value << 2);
 			value = 0;
 		}
 		else {
 			value -= 7;
-			snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x1C, value << 2);
+			snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL2, 0x1C, value << 2);
 			value = 1;
 		}
 		snd_soc_component_update_bits(component, SABRE32_DPLL_MODE, 0x03, value);
@@ -349,7 +349,7 @@ static SOC_ENUM_SINGLE_DECL(remap_output, 14, 0, remap_output_text);
 
 static const DECLARE_TLV_DB_MINMAX_MUTE(master_tlv, -6051, 0);
 */
-static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 50, 1);
+static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 50, 0);
 
 static const struct snd_kcontrol_new sabre32_controls[] = {
     SOC_DOUBLE_R_TLV("Master Playback Volume", SABRE32_VOLUME0, SABRE32_VOLUME1, 0, 0xFF, 1, sabre32_dac_tlv),
