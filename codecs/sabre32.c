@@ -27,14 +27,14 @@
 #define SABRE32_CODEC_DAI_NAME "sabre32-hifi"
 
 static const struct reg_default sabre32_reg_defaults[] = {
-	{ SABRE32_VOLUME0, 		0x00 },
+	{ SABRE32_VOLUME0,		0x00 },
 	{ SABRE32_VOLUME1,		0x00 },
 	{ SABRE32_VOLUME2,		0x00 },
-	{ SABRE32_VOLUME3,              0x00 },
-	{ SABRE32_VOLUME4,              0x00 },
-	{ SABRE32_VOLUME5,              0x00 },
-	{ SABRE32_VOLUME6,              0x00 },
-	{ SABRE32_VOLUME7,              0x00 },
+	{ SABRE32_VOLUME3,		0x00 },
+	{ SABRE32_VOLUME4,		0x00 },
+	{ SABRE32_VOLUME5,		0x00 },
+	{ SABRE32_VOLUME6,		0x00 },
+	{ SABRE32_VOLUME7,		0x00 },
 	/* First bit of AUTOMUTE_LEV controls SPDIF_ENABLE: 0 (I2S or DSD), 1 SPDIF */
 	{ SABRE32_AUTOMUTE_LEV,		0x68 },
 	{ SABRE32_AUTOMUTE_TIME,	0x04 }, /* Time in seconds: 2096896 / (REG_VALUE * DATA_CLK) */
@@ -99,7 +99,8 @@ static const struct reg_default sabre32_reg_defaults[] = {
 	 * Bit 6: Source of DAC7 is DAC5 (1) or DAC7 (0)
 	 * Bit 5: Source of DAC4 is DAC2 (1) or DAC4 (0)
 	 * Bit 4: Source of DAC3 is DAC1 (1) or DAC3 (0)
-	 * Bit 3 reserved (needs to be set to 1)
+	 * Bit 3 reserved (1 for true differential, 0 for pseudo differential --> quantizer setting)
+	 *    Set it to pseudo differential per default (stereo, 9-bit quantizer setting)
 	 * Bit 2:1 IIR bandwidth:
 	 * 00: Normal (for least in-band ripple for PCM data)
 	 * 01: 50k (default)
@@ -126,7 +127,7 @@ static const struct reg_default sabre32_reg_defaults[] = {
 	 * for DAC1 and DAC2 (other digital DAC sections would
 	 * not be used).
 	 */
-	{ SABRE32_MODE_CONTROL4,	0xFF }, /*reserved */
+	{ SABRE32_MODE_CONTROL4,	0x00 }, /*reserved */
 	{ SABRE32_AUTOMUTE_LOOPBACK,	0x00 }, /* All bits except 3 reserved, Bit 3: 1 enable automte, 0 disable automute */
 	/* Mode control5 doc:
 	 * Bit 7: 1 right channel or 0 left channel for mono mode
@@ -197,6 +198,13 @@ static bool sabre32_writeable_reg(struct device *dev, unsigned int reg)
 		return 0;
 	else
 		return 1;
+}
+
+static bool sabre32_volatile_reg(struct device *dev, unsigned int reg)
+{
+	if( reg <= 0x1F && reg >= 0x1C)
+		return 1;
+	else return 0;
 }
 
 struct sabre32_priv {
@@ -286,18 +294,7 @@ static const char * const bypass_or_use_text[] = {
     "Bypass", "Use"
 };
 
-/*static const char *deemphasis_filter_text[] = {
-    "Bypass", "32kHz", "44.1kHz", "48kHz"
-};*/
-
 static SOC_ENUM_SINGLE_DECL(sabre32_jitter_reduction, SABRE32_MODE_CONTROL1, 2, bypass_or_use_text);
-/*static SOC_ENUM_SINGLE_DECL(deemphasis_filter, 4, 0, deemphasis_filter_text);*/
-
-static const char * const sabre32_iir_bw_text[] = {
-    "Normal", "50k", "60k", "70k"
-};
-
-static SOC_ENUM_SINGLE_DECL(sabre32_iir_bw, SABRE32_DAC_SOURCE, 1, sabre32_iir_bw_text);
 
 static const char * const sabre32_fir_rolloff_text[] = {
     "Slow", "Fast"
@@ -339,44 +336,48 @@ static const char *mclk_notch_text[] = {
 };
 
 static SOC_ENUM_SINGLE_DECL(mclk_notch, 13, 0, mclk_notch_text);
-
-
-static const char *remap_output_text[] = {
-    "q6true", "q7pseudo", "q7true", "q8pseudo", "q8true", "q9pseudo"
-};
-
-static SOC_ENUM_SINGLE_DECL(remap_output, 14, 0, remap_output_text);
-
-static const DECLARE_TLV_DB_MINMAX_MUTE(master_tlv, -6051, 0);
 */
-static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 50, 0);
+
+static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 50, 1);
 
 static const struct snd_kcontrol_new sabre32_controls[] = {
-    SOC_DOUBLE_R_TLV("Master Playback Volume", SABRE32_VOLUME0, SABRE32_VOLUME1, 0, 0xFF, 1, sabre32_dac_tlv),
-    SOC_SINGLE("Master Playback Switch", SABRE32_MODE_CONTROL1, 0, 1, 1),
-    SOC_ENUM("SPDIF Source", sabre32_spdif_input),
-    SOC_ENUM("Jitter Reduction", sabre32_jitter_reduction),
-    SOC_ENUM_EXT("DPLL", sabre32_dpll_enum, sabre32_dpll_get, sabre32_dpll_set),
-    SOC_ENUM("IIR Bandwidth", sabre32_iir_bw),
-    SOC_ENUM("FIR Rolloff", sabre32_fir_rolloff),
-    SOC_ENUM("DPLL Phase", sabre32_dpll_phase),
-    SOC_ENUM("Oversampling Filter", sabre32_os_filter),
+	SOC_DOUBLE_R_TLV("Master Playback Volume", SABRE32_VOLUME0, SABRE32_VOLUME1, 0, 0xFF, 1, sabre32_dac_tlv),
+	SOC_SINGLE("Master Playback Switch", SABRE32_MODE_CONTROL1, 0, 1, 1),
+	SOC_ENUM("SPDIF Source", sabre32_spdif_input),
+	SOC_ENUM("Jitter Reduction", sabre32_jitter_reduction),
+	SOC_ENUM_EXT("DPLL", sabre32_dpll_enum, sabre32_dpll_get, sabre32_dpll_set),
+	SOC_ENUM("FIR Rolloff", sabre32_fir_rolloff),
+	SOC_ENUM("DPLL Phase", sabre32_dpll_phase),
+	SOC_ENUM("Oversampling Filter", sabre32_os_filter),
 };
 
 const struct regmap_config sabre32_regmap = {
 	.reg_bits = 8,
 	.val_bits = 8,
-	.max_register = 93,
+	.max_register = 71,
 	.reg_defaults = sabre32_reg_defaults,
 	.num_reg_defaults = ARRAY_SIZE(sabre32_reg_defaults),
 	.writeable_reg = sabre32_writeable_reg,
 	.readable_reg = sabre32_readable_reg,
+	.volatile_reg = sabre32_volatile_reg,
 	.cache_type = REGCACHE_RBTREE,
 };
 EXPORT_SYMBOL_GPL(sabre32_regmap);
 
+static int sabre32_component_probe(struct snd_soc_component *component)
+{
+	/* Setup some default register settings */
+	
+	/* Set pseudo differential */
+	snd_soc_component_update_bits(component, SABRE32_DAC_SOURCE, 0x08, 0x00);
+	/* Set 9-bit quantizer for stereo */
+	snd_soc_component_write(component, SABRE32_MODE_CONTROL4, 0xFF);
+	return 0;
+}
+
 static struct snd_soc_component_driver sabre32_component_driver = {
     .controls = sabre32_controls,
+    .probe = sabre32_component_probe,
     .num_controls = ARRAY_SIZE(sabre32_controls),
     .idle_bias_on = 1,
     .use_pmdown_time = 1,
@@ -387,63 +388,67 @@ static struct snd_soc_component_driver sabre32_component_driver = {
 static int sabre32_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 {
     struct snd_soc_component *component = dai->component;
-    int ret = 0;
 
     switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
     case SND_SOC_DAIFMT_I2S:
-        ret = snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x30, 0x00);
+        snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x30, 0x00);
         break;
     case SND_SOC_DAIFMT_LEFT_J:
-        ret = snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x30, 0x10);
+        snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x30, 0x10);
         break;
     case SND_SOC_DAIFMT_RIGHT_J:
-        ret = snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x30, 0x20);
+        snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x30, 0x20);
         break;
     default:
         dev_warn(component->dev, "unsupported DAI fmt %d", fmt);
-        ret = -EINVAL;
+        return -EINVAL;
         break;
     }
 
-    return ret;
+    return 0;
 }
-
-/* TODO: Implement mute_stream or digital_mute */
 
 static int sabre32_hw_params(struct snd_pcm_substream *substream,
         struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
 {
     struct snd_soc_component *component = dai->component;
-    int ret;
 
     switch (params_format(params)) {
     case SNDRV_PCM_FORMAT_S16_LE:
-        ret = snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0xc0, 0x80);
-        break;
+	    /* set bit depth */
+	    snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0xc0, 0x80);
+	    /* set IIR bandwidth to Normal */
+	    snd_soc_component_update_bits(component, SABRE32_DAC_SOURCE, 0x06, 0x00);
+	    break;
 
     case SNDRV_PCM_FORMAT_S24_3LE:
     case SNDRV_PCM_FORMAT_S24_LE:
-        ret = snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0xc0, 0x00);
-        break;
+        snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0xc0, 0x00);
+        snd_soc_component_update_bits(component, SABRE32_DAC_SOURCE, 0x06, 0x00);
+	break;
 
     case SNDRV_PCM_FORMAT_S32_LE:
+	snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0xc0, 0xc0);
+	snd_soc_component_update_bits(component, SABRE32_DAC_SOURCE, 0x06, 0x00);
+	break;
     case SNDRV_PCM_FORMAT_DSD_U8:
     case SNDRV_PCM_FORMAT_DSD_U16_LE:
     case SNDRV_PCM_FORMAT_DSD_U32_LE:
-        ret = snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0xc0, 0xc0);
+        snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0xc0, 0xc0);
+	/* set IIR bandwidth to 60k */
+	snd_soc_component_update_bits(component, SABRE32_DAC_SOURCE, 0x06, 0x04);
         break;
 
     default:
         dev_warn(component->dev, "unsupported PCM format %d", params_format(params));
-        ret = -EINVAL;
+        return -EINVAL;
     }
 
-    return ret;
+    return 0;
 }
 
 static const struct snd_soc_dai_ops sabre32_dai_ops = {
     .set_fmt = sabre32_set_fmt,
-//    .mute_stream = sabre32_codec_mute_stream,
     .hw_params = sabre32_hw_params,
 };
 
