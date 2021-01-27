@@ -342,7 +342,7 @@ static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 50, 1);
 
 static const struct snd_kcontrol_new sabre32_controls[] = {
 	SOC_DOUBLE_R_TLV("Master Playback Volume", SABRE32_VOLUME0, SABRE32_VOLUME1, 0, 0xFF, 1, sabre32_dac_tlv),
-	SOC_SINGLE("Master Playback Switch", SABRE32_MODE_CONTROL1, 0, 1, 1),
+//	SOC_SINGLE("Master Playback Switch", SABRE32_MODE_CONTROL1, 0, 1, 1),
 	SOC_ENUM("SPDIF Source", sabre32_spdif_input),
 	SOC_ENUM("Jitter Reduction", sabre32_jitter_reduction),
 	SOC_ENUM_EXT("DPLL", sabre32_dpll_enum, sabre32_dpll_get, sabre32_dpll_set),
@@ -408,6 +408,18 @@ static int sabre32_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
     return 0;
 }
 
+static int sabre32_mute(struct snd_soc_dai *dai, int mute, int stream)
+{
+	struct snd_soc_component *component = dai->component;
+
+	if(stream != SNDRV_PCM_STREAM_PLAYBACK)
+		return 0;
+
+	snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x01, mute ? 0x01 : 0x00);
+
+	return 0;
+}
+
 static int sabre32_hw_params(struct snd_pcm_substream *substream,
         struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
 {
@@ -449,6 +461,7 @@ static int sabre32_hw_params(struct snd_pcm_substream *substream,
 
 static const struct snd_soc_dai_ops sabre32_dai_ops = {
     .set_fmt = sabre32_set_fmt,
+    .mute_stream = sabre32_mute,
     .hw_params = sabre32_hw_params,
 };
 
