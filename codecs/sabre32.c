@@ -338,11 +338,11 @@ static const char *mclk_notch_text[] = {
 static SOC_ENUM_SINGLE_DECL(mclk_notch, 13, 0, mclk_notch_text);
 */
 
-static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 50, 1);
+static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 50, 0);
 
 static const struct snd_kcontrol_new sabre32_controls[] = {
 	SOC_DOUBLE_R_TLV("Master Playback Volume", SABRE32_VOLUME0, SABRE32_VOLUME1, 0, 0xFF, 1, sabre32_dac_tlv),
-	SOC_SINGLE("Master Playback Switch", SABRE32_MODE_CONTROL1, 0, 1, 1),
+//	SOC_SINGLE("Master Playback Switch", SABRE32_MODE_CONTROL1, 0, 1, 1),
 	SOC_ENUM("SPDIF Source", sabre32_spdif_input),
 	SOC_ENUM("Jitter Reduction", sabre32_jitter_reduction),
 	SOC_ENUM_EXT("DPLL", sabre32_dpll_enum, sabre32_dpll_get, sabre32_dpll_set),
