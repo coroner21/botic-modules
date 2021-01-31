@@ -273,6 +273,35 @@ static int sabre32_dpll_get(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+static int sabre32_mute_set(struct snd_kcontrol *kcontrol,
+		struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct sabre32_priv *sabre32_data = snd_soc_component_get_drvdata(component);
+	int value = ucontrol->value.enumerated.item[0];
+
+	if (value)
+	{
+		sabre32_data->stream_muted = 0;
+		snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x01, 0x00);
+	}
+	else
+	{
+		sabre32_data->stream_muted = 1;
+		snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x01, 0x01);
+	}
+	return 0;
+}
+
+static int sabre32_mute_get(struct snd_kcontrol *kcontrol,
+		struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct sabre32_priv *sabre32_data = snd_soc_component_get_drvdata(component);
+	ucontrol->value.enumerated.item[0] = !sabre32_data->stream_muted;
+	return 0;
+}
+
 static const char * const sabre32_spdif_input_text[] = {
     "1", "2", "3", "4", "5", "6", "7", "8"
 };
@@ -342,7 +371,7 @@ static const DECLARE_TLV_DB_SCALE(sabre32_dac_tlv, -12750, 50, 0);
 
 static const struct snd_kcontrol_new sabre32_controls[] = {
 	SOC_DOUBLE_R_TLV("Master Playback Volume", SABRE32_VOLUME0, SABRE32_VOLUME1, 0, 0xFF, 1, sabre32_dac_tlv),
-//	SOC_SINGLE("Master Playback Switch", SABRE32_MODE_CONTROL1, 0, 1, 1),
+	SOC_SINGLE_BOOL_EXT("Master Playback Switch", 0, sabre32_mute_get, sabre32_mute_set),
 	SOC_ENUM("SPDIF Source", sabre32_spdif_input),
 	SOC_ENUM("Jitter Reduction", sabre32_jitter_reduction),
 	SOC_ENUM_EXT("DPLL", sabre32_dpll_enum, sabre32_dpll_get, sabre32_dpll_set),
@@ -411,9 +440,14 @@ static int sabre32_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 static int sabre32_mute(struct snd_soc_dai *dai, int mute, int stream)
 {
 	struct snd_soc_component *component = dai->component;
+	struct sabre32_priv *sabre32_data = snd_soc_component_get_drvdata(component);
 
 	if(stream != SNDRV_PCM_STREAM_PLAYBACK)
 		return 0;
+
+	/* Only unmute the DAC if not explicitly muted by the ALSA control */
+	if(!mute)
+		mute = sabre32_data->stream_muted;
 
 	snd_soc_component_update_bits(component, SABRE32_MODE_CONTROL1, 0x01, mute ? 0x01 : 0x00);
 
@@ -486,11 +520,17 @@ int sabre32_probe(struct device *dev, struct regmap *regmap)
 	if (!sabre32)
 		return -ENOMEM;					
 	dev_set_drvdata(dev, sabre32);
+	/* Initialize internal data */
 	sabre32->regmap = regmap;
+	sabre32->stream_muted = 0;
+	sabre32->dpll_mode = 0;
+
 	ret = devm_snd_soc_register_component(dev, &sabre32_component_driver, &sabre32_dai, 1);
+	
 	if (ret != 0) {
 		dev_err(dev, "Failed to register CODEC: %d\n", ret);
 	}
+
 	return ret;
 }
 EXPORT_SYMBOL_GPL(sabre32_probe);
