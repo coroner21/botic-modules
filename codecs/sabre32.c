@@ -218,7 +218,7 @@ struct sabre32_priv {
             SNDRV_PCM_FMTBIT_S24_3LE | \
             SNDRV_PCM_FMTBIT_S24_LE | \
             SNDRV_PCM_FMTBIT_S32_LE | \
-            SNDRV_PCM_FMTBIT_DSD_U8_LE | \
+            SNDRV_PCM_FMTBIT_DSD_U8 | \
             0)
 
 static const char * const sabre32_dpll_texts[] = {
