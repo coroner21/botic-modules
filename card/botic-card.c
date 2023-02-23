@@ -19,7 +19,7 @@
 /* External module: include config */
 #include <generated/autoconf.h>
 
-static int dai_format = SND_SOC_DAIFMT_CBS_CFS | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
+static int dai_format = SND_SOC_DAIFMT_BP_FP | SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_I2S;
 
 static int blr_ratio = 64;
 
