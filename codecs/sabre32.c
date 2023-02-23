@@ -411,7 +411,7 @@ static struct snd_soc_component_driver sabre32_component_driver = {
     .idle_bias_on = 1,
     .use_pmdown_time = 1,
     .endianness = 1,
-    .non_legacy_dai_naming = 1,
+    .legacy_dai_naming = 1,
 };
 
 static int sabre32_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
