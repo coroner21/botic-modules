@@ -1,2 +1,3 @@
-obj-m := snd-soc-davinci-mcasp.o
+obj-m := snd-soc-davinci-mcasp.o snd-soc-ti-edma.o
 snd-soc-davinci-mcasp-y := davinci-mcasp.o
+snd-soc-ti-edma-y := edma-pcm.o
