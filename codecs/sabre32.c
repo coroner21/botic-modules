@@ -547,13 +547,12 @@ MODULE_DEVICE_TABLE(of, sabre32_dt_ids);
 #endif
 
 static const struct i2c_device_id sabre32_i2c_id[] = {
-		{ "sabre32", 0 },
+		{ .name = "sabre32", .driver_data = 0 },
 			{ }
 };
 MODULE_DEVICE_TABLE(i2c, sabre32_i2c_id);
 
-static int sabre32_i2c_probe(struct i2c_client *i2c,
-		const struct i2c_device_id *id)
+static int sabre32_i2c_probe(struct i2c_client *i2c)
 {
 	int ret;
 	struct regmap *regmap;
