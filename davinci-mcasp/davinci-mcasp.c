@@ -1638,7 +1638,25 @@ static void davinci_mcasp_shutdown(struct snd_pcm_substream *substream,
 	}
 }
 
+static int davinci_mcasp_dai_probe(struct snd_soc_dai *dai)
+{
+	struct davinci_mcasp *mcasp = snd_soc_dai_get_drvdata(dai);
+	int stream;
+
+	for_each_pcm_streams(stream)
+		snd_soc_dai_dma_data_set(dai, stream, &mcasp->dma_data[stream]);
+
+	if (mcasp->op_mode == DAVINCI_MCASP_DIT_MODE) {
+		davinci_mcasp_init_iec958_status(mcasp);
+		snd_soc_add_dai_controls(dai, davinci_mcasp_iec958_ctls,
+					 ARRAY_SIZE(davinci_mcasp_iec958_ctls));
+	}
+
+	return 0;
+}
+
 static const struct snd_soc_dai_ops davinci_mcasp_dai_ops = {
+	.probe		= davinci_mcasp_dai_probe,
 	.startup	= davinci_mcasp_startup,
 	.shutdown	= davinci_mcasp_shutdown,
 	.trigger	= davinci_mcasp_trigger,
@@ -1649,16 +1667,6 @@ static const struct snd_soc_dai_ops davinci_mcasp_dai_ops = {
 	.set_sysclk	= davinci_mcasp_set_sysclk,
 	.set_tdm_slot	= davinci_mcasp_set_tdm_slot,
 };
-
-static int davinci_mcasp_dai_probe(struct snd_soc_dai *dai)
-{
-	struct davinci_mcasp *mcasp = snd_soc_dai_get_drvdata(dai);
-
-	dai->playback_dma_data = &mcasp->dma_data[SNDRV_PCM_STREAM_PLAYBACK];
-	dai->capture_dma_data = &mcasp->dma_data[SNDRV_PCM_STREAM_CAPTURE];
-
-	return 0;
-}
 
 #define DAVINCI_MCASP_RATES	SNDRV_PCM_RATE_KNOT
 
@@ -1679,7 +1687,6 @@ static int davinci_mcasp_dai_probe(struct snd_soc_dai *dai)
 static struct snd_soc_dai_driver davinci_mcasp_dai[] = {
 	{
 		.name		= "davinci-mcasp.0",
-		.probe		= davinci_mcasp_dai_probe,
 		.playback	= {
 			.stream_name = "IIS Playback",
 			.channels_min	= 1,
@@ -1700,7 +1707,6 @@ static struct snd_soc_dai_driver davinci_mcasp_dai[] = {
 	},
 	{
 		.name		= "davinci-mcasp.1",
-		.probe		= davinci_mcasp_dai_probe,
 		.playback 	= {
 			.stream_name = "DIT Playback",
 			.channels_min	= 1,
@@ -2087,7 +2093,7 @@ static int davinci_mcasp_gpio_direction_out(struct gpio_chip *chip,
 	return 0;
 }
 
-static void davinci_mcasp_gpio_set(struct gpio_chip *chip, unsigned offset,
+static int davinci_mcasp_gpio_set(struct gpio_chip *chip, unsigned offset,
 				  int value)
 {
 	struct davinci_mcasp *mcasp = gpiochip_get_data(chip);
@@ -2096,6 +2102,7 @@ static void davinci_mcasp_gpio_set(struct gpio_chip *chip, unsigned offset,
 		mcasp_set_bits(mcasp, DAVINCI_MCASP_PDOUT_REG, BIT(offset));
 	else
 		mcasp_clr_bits(mcasp, DAVINCI_MCASP_PDOUT_REG, BIT(offset));
+	return 0;
 }
 
 static int davinci_mcasp_gpio_direction_in(struct gpio_chip *chip,
@@ -2386,11 +2393,9 @@ err:
 	return ret;
 }
 
-static int davinci_mcasp_remove(struct platform_device *pdev)
+static void davinci_mcasp_remove(struct platform_device *pdev)
 {
 	pm_runtime_disable(&pdev->dev);
-
-	return 0;
 }
 
 #ifdef CONFIG_PM
