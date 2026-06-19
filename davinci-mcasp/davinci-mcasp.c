@@ -1646,11 +1646,11 @@ static int davinci_mcasp_dai_probe(struct snd_soc_dai *dai)
 	for_each_pcm_streams(stream)
 		snd_soc_dai_dma_data_set(dai, stream, &mcasp->dma_data[stream]);
 
-	if (mcasp->op_mode == DAVINCI_MCASP_DIT_MODE) {
+/*	if (mcasp->op_mode == DAVINCI_MCASP_DIT_MODE) {
 		davinci_mcasp_init_iec958_status(mcasp);
 		snd_soc_add_dai_controls(dai, davinci_mcasp_iec958_ctls,
 					 ARRAY_SIZE(davinci_mcasp_iec958_ctls));
-	}
+	}*/
 
 	return 0;
 }
