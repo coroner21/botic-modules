@@ -294,13 +294,12 @@ MODULE_DEVICE_TABLE(of, es9018k2m_dt_ids);
 #endif
 
 static const struct i2c_device_id es9018k2m_i2c_id[] = {
-	{ "es9018k2m", 0 },
+	{ .name = "es9018k2m", .driver_data = 0 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, es9018k2m_i2c_id);
 
-static int es9018k2m_i2c_probe(struct i2c_client *i2c,
-			      const struct i2c_device_id *id)
+static int es9018k2m_i2c_probe(struct i2c_client *i2c)
 {
 	int ret;
 	struct regmap *regmap;
