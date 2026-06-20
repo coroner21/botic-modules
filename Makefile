@@ -86,7 +86,7 @@ dtbs_clean:
 dtbs_install:
 	@echo -e "\n::\033[34m Installing device tree overlay files\033[0m"
 	@echo "====================================================="
-	install -m 644 -v -$(DTSDIR)/src/arm/overlays/*.dtbo $(DESTDIR)/lib/firmware/
+	@cp -v -$(DTSDIR)/src/arm/overlays/*.dtbo $(DESTDIR)/lib/firmware/
 
 clean:
 	$(MAKE) dtbs_clean
