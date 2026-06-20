@@ -86,7 +86,7 @@ dtbs_clean:
 dtbs_install:
 	@echo -e "\n::\033[34m Installing device tree overlay files\033[0m"
 	@echo "====================================================="
-	$(MAKE) -C $(DTSDIR) install
+	$(MAKE) -C $(DTSDIR) arch_install
 
 clean:
 	$(MAKE) dtbs_clean
