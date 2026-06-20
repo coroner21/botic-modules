@@ -192,6 +192,10 @@ install_arch_arm64: $(ARCH_DTB) $(ARCH_DTBO)
 	cp src/arm64/ti/k3-*.dtb /boot/firmware/ti/ || true
 	cp src/arm64/overlays/*.dtbo /boot/firmware/overlays/ || true
 
+dtbo_install: $(ARCH_DTBO)
+	install -m 755 -v -d $(DESTDIR)/usr/lib/firmware/
+	install -m 644 -v $(obj)/*.dtbo $(DESTDIR)/usr/lib/firmware/
+
 RCS_FIND_IGNORE := \( -name SCCS -o -name BitKeeper -o -name .svn -o -name CVS \
                    -o -name .pc -o -name .hg -o -name .git \) -prune -o
 
