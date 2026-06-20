@@ -507,7 +507,7 @@ static struct snd_soc_dai_driver sabre32_dai = {
 		.stream_name = "Playback",
 		.channels_min = 1,
 		.channels_max = 2,
-		.rates = SNDRV_PCM_RATE_KNOT,
+		.rates = SNDRV_PCM_RATE_8000_768000,
 		.formats = SABRE32_FORMATS,
 	},
 	.ops = &sabre32_dai_ops,

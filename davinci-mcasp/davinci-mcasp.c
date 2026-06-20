@@ -1668,7 +1668,7 @@ static const struct snd_soc_dai_ops davinci_mcasp_dai_ops = {
 	.set_tdm_slot	= davinci_mcasp_set_tdm_slot,
 };
 
-#define DAVINCI_MCASP_RATES	SNDRV_PCM_RATE_KNOT
+#define DAVINCI_MCASP_RATES	SNDRV_PCM_RATE_8000_768000
 
 #define DAVINCI_MCASP_PCM_FMTS (SNDRV_PCM_FMTBIT_S8 | \
 				SNDRV_PCM_FMTBIT_U8 | \
