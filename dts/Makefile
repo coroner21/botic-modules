@@ -192,6 +192,7 @@ install_arch_arm64: $(ARCH_DTB) $(ARCH_DTBO)
 	cp src/arm64/ti/k3-*.dtb /boot/firmware/ti/ || true
 	cp src/arm64/overlays/*.dtbo /boot/firmware/overlays/ || true
 
+PHONY += dtbo_install
 dtbo_install: $(ARCH_DTBO)
 	install -m 755 -v -d $(DESTDIR)/usr/lib/firmware/
 	install -m 644 -v $(obj)/*.dtbo $(DESTDIR)/usr/lib/firmware/
