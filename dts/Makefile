@@ -1,9 +1,30 @@
 
 DTC ?= dtc
 CPP ?= cpp
-DESTDIR ?=
+KERNEL_VERSION ?= $(shell uname -r)
 
-DTCVERSION ?= $(shell $(DTC) --version | grep ^Version | sed 's/^.* //g')
+DTCVERSION = $(shell $(DTC) --version | grep ^Version | sed 's/^.* //g')
+
+# Disable noisy checks by default
+ifeq ($(findstring 1,$(DTC_VERBOSE)),)
+DTC_FLAGS += -Wno-unit_address_vs_reg \
+        -Wno-unit_address_format \
+        -Wno-avoid_unnecessary_addr_size \
+        -Wno-alias_paths \
+        -Wno-graph_child_address \
+        -Wno-simple_bus_reg \
+        -Wno-unique_unit_address \
+        -Wno-pci_device_reg
+endif
+
+ifneq ($(findstring 2,$(DTC_VERBOSE)),)
+DTC_FLAGS += -Wnode_name_chars_strict \
+        -Wproperty_name_chars_strict
+endif
+
+ifeq "$(DTCVERSION)" "1.6.1"
+DTC_FLAGS += -Wno-interrupt_provider
+endif
 
 MAKEFLAGS += -rR --no-print-directory
 
@@ -32,62 +53,6 @@ ifeq ("$(origin V)", "command line")
 endif
 ifndef KBUILD_VERBOSE
   KBUILD_VERBOSE = 0
-endif
-
-DTC_FLAGS += -Wno-unit_address_vs_reg
-#http://snapshot.debian.org/binary/device-tree-compiler/
-#http://snapshot.debian.org/package/device-tree-compiler/1.4.4-1/#device-tree-compiler_1.4.4-1
-#http://snapshot.debian.org/archive/debian/20170925T220404Z/pool/main/d/device-tree-compiler/device-tree-compiler_1.4.4-1_amd64.deb
-
-ifeq "$(DTCVERSION)" "1.4.5"
-	#GIT BROKEN!!!! Ubuntu Bionic has patches..
-	DTC_FLAGS += -Wno-dmas_property
-	DTC_FLAGS += -Wno-gpios_property
-	DTC_FLAGS += -Wno-pwms_property
-	DTC_FLAGS += -Wno-interrupts_property
-endif
-
-ifeq "$(DTCVERSION)" "1.4.6"
-	#http://snapshot.debian.org/package/device-tree-compiler/1.4.6-1/#device-tree-compiler_1.4.6-1
-	#http://snapshot.debian.org/archive/debian/20180426T224735Z/pool/main/d/device-tree-compiler/device-tree-compiler_1.4.6-1_amd64.deb
-	#Debian: 1.4.6
-	DTC_FLAGS += -Wno-chosen_node_is_root
-	DTC_FLAGS += -Wno-alias_paths
-	DTC_FLAGS += -Wno-avoid_unnecessary_addr_size
-endif
-
-ifeq "$(DTCVERSION)" "1.4.7"
-	#http://snapshot.debian.org/package/device-tree-compiler/1.4.7-3/#device-tree-compiler_1.4.7-3
-	#http://snapshot.debian.org/archive/debian/20180911T215003Z/pool/main/d/device-tree-compiler/device-tree-compiler_1.4.7-3_amd64.deb
-	#Debian: 1.4.6
-	DTC_FLAGS += -Wno-chosen_node_is_root
-	DTC_FLAGS += -Wno-alias_paths
-	DTC_FLAGS += -Wno-avoid_unnecessary_addr_size
-endif
-
-ifeq "$(DTCVERSION)" "1.5.0"
-	#http://snapshot.debian.org/package/device-tree-compiler/1.5.0-1/#device-tree-compiler_1.5.0-1
-	#http://snapshot.debian.org/archive/debian/20190313T032949Z/pool/main/d/device-tree-compiler/device-tree-compiler_1.5.0-1_amd64.deb
-	#Debian: 1.4.6
-	DTC_FLAGS += -Wno-chosen_node_is_root
-	DTC_FLAGS += -Wno-alias_paths
-	DTC_FLAGS += -Wno-avoid_unnecessary_addr_size
-endif
-
-ifeq "$(DTCVERSION)" "1.6.0"
-	#http://snapshot.debian.org/package/device-tree-compiler/1.5.0-1/#device-tree-compiler_1.5.0-1
-	#http://snapshot.debian.org/archive/debian/20190313T032949Z/pool/main/d/device-tree-compiler/device-tree-compiler_1.5.0-1_amd64.deb
-	#Debian: 1.4.6
-	DTC_FLAGS += -Wno-chosen_node_is_root
-	DTC_FLAGS += -Wno-alias_paths
-	DTC_FLAGS += -Wno-avoid_unnecessary_addr_size
-	DTC_FLAGS += -Wno-chosen_node_is_root
-endif
-
-ifeq "$(DTCVERSION)" "2.0.0"
-	#BUILDBOT...http://gfnd.rcn-ee.org:8080/job/beagleboard_overlays/job/master/
-	DTC_FLAGS += -Wno-chosen_node_is_root
-	DTC_FLAGS += -Wno-alias_paths
 endif
 
 # Beautify output
@@ -142,31 +107,38 @@ all_%:
 clean_%:
 	$(Q)$(MAKE) ARCH=$* clean_arch
 
-install_%:
-	$(Q)$(MAKE) ARCH=$* install_arch
+install_arm:
+	$(Q)$(MAKE) ARCH=arm install_arch_arm
+
+install_arm64:
+	$(Q)$(MAKE) ARCH=arm64 install_arch_arm64
 
 ifeq ($(ARCH),)
 
 ALL_DTS		:= $(shell find src/* -name \*.dts)
+ALL_DTSO	:= $(shell find src/* -name \*.dtso)
 
-ALL_DTB		:= $(patsubst %.dts,%.dtbo,$(ALL_DTS))
+ALL_DTB		:= $(patsubst %.dts,%.dtb,$(ALL_DTS))
+ALL_DTBO	:= $(patsubst %.dtso,%.dtbo,$(ALL_DTSO))
 
-$(ALL_DTB): ARCH=$(word 2,$(subst /, ,$@))
-$(ALL_DTB): FORCE
+$(ALL_DTB) $(ALL_DTBO): ARCH=$(word 2,$(subst /, ,$@))
+$(ALL_DTB) $(ALL_DTBO): FORCE
 	$(Q)$(MAKE) ARCH=$(ARCH) $@
 
 else
 
 ARCH_DTS	:= $(shell find src/$(ARCH) -name \*.dts)
+ARCH_DTSO	:= $(shell find src/$(ARCH) -name \*.dtso)
 
-ARCH_DTB	:= $(patsubst %.dts,%.dtbo,$(ARCH_DTS))
+ARCH_DTB	:= $(patsubst %.dts,%.dtb,$(ARCH_DTS))
+ARCH_DTBO	:= $(patsubst %.dtso,%.dtbo,$(ARCH_DTSO))
 
 src	:= src/$(ARCH)
 obj	:= src/$(ARCH)
 
 include scripts/Kbuild.include
 
-cmd_files := $(wildcard $(foreach f,$(ARCH_DTB),$(dir $(f)).$(notdir $(f)).cmd))
+cmd_files := $(wildcard $(foreach f,$(ARCH_DTB) $(ARCH_DTBO),$(dir $(f)).$(notdir $(f)).cmd))
 
 ifneq ($(cmd_files),)
   include $(cmd_files)
@@ -183,28 +155,48 @@ dtc_cpp_flags  = -Wp,-MD,$(depfile).pre.tmp -nostdinc		\
 
 quiet_cmd_dtc = DTC     $@
 cmd_dtc = $(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
-        $(DTC) -O dtb -o $@ -b 0 -@ \
+        $(DTC) -@ -O dtb -o $@ -b 0 \
                 -i $(src) $(DTC_FLAGS) \
                 -d $(depfile).dtc.tmp $(dtc-tmp) ; \
         cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)
 
-$(obj)/%.dtbo: $(src)/%.dts FORCE
+$(obj)/%.dtb: $(src)/%.dts FORCE
 	$(call if_changed_dep,dtc)
 
+quiet_cmd_dtco = DTCO    $@
+cmd_dtco = $(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
+        $(DTC) -@ -O dtb -o $@ -b 0 \
+                -i $(src) $(DTC_FLAGS) \
+                -d $(depfile).dtc.tmp $(dtc-tmp) ; \
+        cat $(depfile).pre.tmp $(depfile).dtc.tmp > $(depfile)
+
+$(obj)/%.dtbo: $(src)/%.dtso FORCE
+	$(call if_changed_dep,dtco)
+
 PHONY += all_arch
-all_arch: $(ARCH_DTB)
+all_arch: $(ARCH_DTB) $(ARCH_DTBO)
 	@:
 
-PHONY += install_arch
-install_arch: $(ARCH_DTBO)
-	install -m 755 -v -d $(DESTDIR)/usr/lib/firmware/
-	install -m 644 -v $(obj)/*.dtbo $(DESTDIR)/usr/lib/firmware/
+PHONY += install_arch_arm
+install_arch_arm: $(ARCH_DTB) $(ARCH_DTBO)
+	# install Device Tree
+	mkdir -p /boot/dtbs/$(KERNEL_VERSION)/overlays/
+	cp src/arm/ti/omap/*.dtb /boot/dtbs/$(KERNEL_VERSION)/ || true
+	cp src/arm/overlays/*.dtbo /boot/dtbs/$(KERNEL_VERSION)/overlays || true
+
+PHONY += install_arch_arm64
+install_arch_arm64: $(ARCH_DTB) $(ARCH_DTBO)
+	# install Device Tree
+	cp src/arm64/ti/k3-*.dtb /usr/lib/linux-image-$(KERNEL_VERSION)/ti/ || true
+	cp src/arm64/overlays/*.dtbo /usr/lib/linux-image-$(KERNEL_VERSION)/ti/ || true
+	cp src/arm64/ti/k3-*.dtb /boot/firmware/ti/ || true
+	cp src/arm64/overlays/*.dtbo /boot/firmware/overlays/ || true
 
 RCS_FIND_IGNORE := \( -name SCCS -o -name BitKeeper -o -name .svn -o -name CVS \
                    -o -name .pc -o -name .hg -o -name .git \) -prune -o
 
 PHONY += clean_arch
-clean_arch: __clean-files = $(ARCH_DTB)
+clean_arch: __clean-files = $(ARCH_DTB) $(ARCH_DTBO)
 clean_arch: FORCE
 	$(call cmd,clean)
 	@find . $(RCS_FIND_IGNORE) \
@@ -225,7 +217,7 @@ help:
 	@echo "  clean_<ARCH>:          Clean all generated files for <ARCH>"
 	@echo "  install_<ARCH>:        Install all generated files for <ARCH> (sudo)"
 	@echo ""
-	@echo "  src/<ARCH>/<DTS>.dtbo   Build a single device tree binary"
+	@echo "  src/<ARCH>/<DTS>.dtb   Build a single device tree binary"
 	@echo ""
 	@echo "Architectures: $(ALL_ARCHES)"
 
